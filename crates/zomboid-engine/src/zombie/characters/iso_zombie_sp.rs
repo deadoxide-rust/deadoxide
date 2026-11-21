@@ -72,6 +72,10 @@ pub struct SinglePlayerWorld {
     /// `GameSounds` after `ScriptManager.Load`: the sounds a `PlaySound` animation event picks a clip of (`None`: the
     /// sound scripts are not loaded and such an event is an `Err`)
     pub game_sounds: Option<Rc<GameSounds>>,
+    /// `SandboxOptions.instance.bloodLevel.getValue()` (1..5, default 3): the blood and giblets of a kill
+    pub blood_level: i32,
+    /// The corpses `IsoDeadBody(died)` made, in order (the original puts them on the square's static moving objects)
+    pub corpses: Vec<super::iso_zombie_kill::Corpse>,
 }
 
 impl SinglePlayerWorld {
@@ -409,6 +413,14 @@ impl IsoZombie {
             self.character.forward_direction.x,
             self.character.forward_direction.y,
         )
+    }
+
+    /// IsoGameCharacter.getAnimAngleRadians: the animation player's `angle` once `isReady()` and its bone transforms have
+    /// had their first frame, else `forwardDirection.getDirection()`. The headless player never gets that first frame
+    /// (`boneTransformsNeedFirstFrame` stays true: the corpse angle of five kills equals the forward direction's angle
+    /// while `getLookAngleRadians` reads the player's angle), so this is `getDirectionAngleRadians()`.
+    pub(crate) fn anim_angle_radians(&self) -> f32 {
+        self.direction_angle_radians()
     }
 
     /// IsoGameCharacter.getLookAngleRadians: the animation player's `angle + twistAngle` once it exists (headless it is
@@ -1419,34 +1431,38 @@ struct SpOwner<'a> {
 }
 
 impl SpOwner<'_> {
-    /// CharacterSoundEmitter.playSoundImpl(file, proxy) -> FMODSoundEmitter.playSoundImpl: `GameSounds.getSound(file)`
-    /// is null for a null or empty name (nothing is played, no draw); else `getRandomClip()` draws
-    /// `Rand.Next(clips.size())` and `addSound` draws nothing. A sound no script defines is made by
-    /// `getOrCreateSound` with one clip. The sound's own playing (FMOD) changes no state this port keeps.
+    /// IsoGameCharacter.OnAnimEvent_PlaySound: `getEmitter().playSoundImpl(file, this)`.
     fn play_sound_impl(
         &mut self,
         file: Option<&str>,
         rand: &mut RandAbstract<Random>,
     ) -> Result<(), String> {
-        let Some(file) = file.filter(|f| !f.is_empty()) else {
-            return Ok(());
-        };
-        let sounds = self
-            .rd
-            .world
-            .game_sounds
-            .as_ref()
-            .ok_or("PlaySound: the sound scripts are not loaded")?;
-        match sounds.sound_by_name.get(file) {
-            Some(&index) => {
-                sounds.sound(index).get_random_clip(rand)?;
-            }
-            None => {
-                rand.next(1);
-            }
-        }
-        Ok(())
+        play_sound_impl(self.rd.world.game_sounds.as_ref(), file, rand)
     }
+}
+
+/// CharacterSoundEmitter.playSoundImpl(file, proxy) -> FMODSoundEmitter.playSoundImpl: `GameSounds.getSound(file)` is
+/// null for a null or empty name (nothing is played, no draw); else `getRandomClip()` draws `Rand.Next(clips.size())`
+/// and `addSound` draws nothing. A sound no script defines is made by `getOrCreateSound` with one clip. The sound's
+/// own playing (FMOD) changes no state this port keeps.
+pub(crate) fn play_sound_impl(
+    game_sounds: Option<&Rc<GameSounds>>,
+    file: Option<&str>,
+    rand: &mut RandAbstract<Random>,
+) -> Result<(), String> {
+    let Some(file) = file.filter(|f| !f.is_empty()) else {
+        return Ok(());
+    };
+    let sounds = game_sounds.ok_or("PlaySound: the sound scripts are not loaded")?;
+    match sounds.sound_by_name.get(file) {
+        Some(&index) => {
+            sounds.sound(index).get_random_clip(rand)?;
+        }
+        None => {
+            rand.next(1);
+        }
+    }
+    Ok(())
 }
 
 impl IAnimationVariableSource for SpOwner<'_> {

@@ -373,6 +373,12 @@ pub struct SpState {
     /// IsoGameCharacter `blockTurning` (set while falling down) and `reanimateTimer`; ZombieGetUpState's `PREV_STATE`
     pub block_turning: bool,
     pub reanimate_timer: f32,
+    /// `onKillDone`, `onDeathDone` (`Kill`/`die`), and the negation of `doDeathSound` (initialiser true)
+    pub on_kill_done: bool,
+    pub on_death_done: bool,
+    pub death_sound_done: bool,
+    /// `diedBody != null`: the corpse `becomeCorpse` made is in `SinglePlayerWorld.corpses`
+    pub died_body: bool,
     pub get_up_prev_state: Option<ZombieState>,
     /// `canSeeTarget`
     pub can_see_target: bool,
@@ -450,6 +456,10 @@ impl Default for SpState {
             last_hit_part: 0,
             block_turning: false,
             reanimate_timer: 0.0,
+            on_kill_done: false,
+            on_death_done: false,
+            death_sound_done: false,
+            died_body: false,
             get_up_prev_state: None,
             can_see_target: false,
             alerted: false,
