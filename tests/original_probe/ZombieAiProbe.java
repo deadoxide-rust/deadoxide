@@ -218,7 +218,7 @@ public class ZombieAiProbe {
                     System.err.println("DBG " + n + " x=" + z.getX() + " y=" + z.getY() + " nx=" + z.getNextX() + " ny=" + z.getNextY()
                         + " lx=" + z.getLastX() + " ly=" + z.getLastY() + " tx=" + ActionContextProbe.g(pfb, "targetX") + " ty=" + ActionContextProbe.g(pfb, "targetY")
                         + " updating=" + z.isAnimationUpdatingThisFrame() + " path2=" + (z.getPath2() != null)
-                        + " impulse=" + z.getImpulsex() + "," + z.getImpulsey());
+                        + " impulse=" + z.getImpulsex() + "," + z.getImpulsey() + " cur=" + (z.getCurrentSquare() != null) + " last=" + (z.getLastSquare() != null));
                 }
             }
         }

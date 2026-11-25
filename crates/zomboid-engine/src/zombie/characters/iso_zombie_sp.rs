@@ -1061,6 +1061,11 @@ impl IsoZombie {
         self.bonus_spot_time = pz_math::clamp(self.bonus_spot_time - mult, 0.0, f32::MAX);
         self.time_since_seen_flesh =
             pz_math::clamp(self.time_since_seen_flesh + mult, 0.0, f32::MAX);
+        // IsoGameCharacter.updateInternal: `if (this.current != null)` guards all of it (a zombie whose corpse was just
+        // made by `die()` -> `removeFromSquare()` has no square until the next `postupdate`)
+        if self.sp.current.is_none() {
+            return Ok(());
+        }
         // super.update() = IsoGameCharacter.updateInternal: the state timer, then StateMachine.update
         self.character.moving.state_event_delay_timer -= thirty;
         // IsoGameCharacter.updateInternal / IsoMovingObject.update: `lastX/Y/Z` are where the zombie stands now
@@ -1295,7 +1300,9 @@ impl IsoZombie {
             self.action_state_changed_sp(anim, world)?;
         }
         let dt = world.time_delta() * anim.animation_time_scale;
-        {
+        // `if (this.getCurrentSquare() != null) getAdvancedAnimator().update(animDeltaT)`: a zombie that just became a
+        // corpse (`removeFromSquare`) is not animated this tick
+        if self.sp.current.is_some() {
             let mut owner = SpOwner {
                 z: self,
                 ctx: &mut anim.action_context,

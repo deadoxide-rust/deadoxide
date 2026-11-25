@@ -226,7 +226,10 @@ impl IsoZombie {
         if self.sp.died_body {
             return Ok(());
         }
-        let corpse = self.new_dead_body()?;
+        let corpse = self.new_dead_body(world)?;
+        // IsoDeadBody ctor: `died.removeFromWorld(); died.removeFromSquare()`: `current = last = null`
+        self.sp.current = None;
+        self.sp.last = None;
         let sp = world
             .sp
             .as_mut()
@@ -239,7 +242,7 @@ impl IsoZombie {
     /// zombie.iso.objects.IsoDeadBody(died, wasCorpseAlready false, bAddToSquareAndWorld true) for a zombie: what it
     /// copies off the dead character. Nothing in it draws a random number (`pathToLocationF` of nearby zombies is for
     /// a corpse that was not a zombie).
-    fn new_dead_body(&mut self) -> Result<Corpse, String> {
+    fn new_dead_body(&mut self, world: &mut ZombieWorld) -> Result<Corpse, String> {
         if self.crawling {
             return Err("IsoDeadBody: the corpse of a crawling zombie is not ported".into());
         }
@@ -248,6 +251,14 @@ impl IsoZombie {
         moving.offset_x = m.offset_x;
         moving.offset_y = m.offset_y;
         moving.dir = self.character.forward_iso_direction().ordinal() as i32;
+        // `baseVisual.copyFrom(zombie visual)` first calls `other.getSkinTexture()`, which picks the rot stage of a
+        // zombie without one: `pickRandomZombieRotStage` draws `OutfitRNG.Next(100)`; on world day 0 the chance of
+        // stage 1 is 100, so the stage is 1 whatever the roll (UNKNOWN for a later world day). The hair, beard and skin
+        // texture getters that follow draw from tables not ported here (no oracle output depends on them).
+        if !(1..=3).contains(&self.character.human_visual.zombie_rot_stage) {
+            let _ = world.outfit_rng.next(100);
+            self.character.human_visual.zombie_rot_stage = 1;
+        }
         let human_visual = self.character.human_visual.clone();
         let body = IsoDeadBody {
             moving,

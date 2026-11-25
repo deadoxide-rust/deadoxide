@@ -413,6 +413,40 @@ fn pathsearch_matches_original() {
 }
 
 #[test]
+fn zombiekill_matches_original() {
+    // ZombieAiProbe's kill scenarios; keep in step with the `zombiekill` line of tools/oracle.sh
+    check(
+        "zombiekill",
+        &[
+            "zai:100:300:2.0:0:hit20@Base.BaseballBat@100.0",
+            "zai:101:170:0.5:0:hit20@Base.BaseballBat@100.0@c",
+            "zai:102:200:0:-2.0:hit20@Base.BaseballBat@100.0",
+            "zai:103:200:1.5:1.5:hit20@Base.BaseballBat@100.0@c",
+            "zai:110:300:2.0:0:hit20@Base.Axe@100.0",
+            "zai:111:170:0.5:0:hit20@Base.Axe@100.0@c",
+            "zai:112:200:0:-2.0:hit20@Base.Axe@100.0",
+            "zai:113:200:1.5:1.5:hit20@Base.Axe@100.0@c",
+            "zai:120:300:2.0:0:hit20@Base.HuntingKnife@100.0",
+            "zai:121:170:0.5:0:hit20@Base.HuntingKnife@100.0@c",
+            "zai:122:200:0:-2.0:hit20@Base.HuntingKnife@100.0",
+            "zai:123:200:1.5:1.5:hit20@Base.HuntingKnife@100.0@c",
+            "zai:130:300:2.0:0:hit20@Base.LeadPipe@100.0",
+            "zai:131:170:0.5:0:hit20@Base.LeadPipe@100.0@c",
+            "zai:132:200:0:-2.0:hit20@Base.LeadPipe@100.0",
+            "zai:133:200:1.5:1.5:hit20@Base.LeadPipe@100.0@c",
+            "zai:140:300:2.0:0:hit20@Base.BareHands@100.0",
+            "zai:141:170:0.5:0:hit20@Base.BareHands@100.0@c",
+            "zai:142:200:0:-2.0:hit20@Base.BareHands@100.0",
+            "zai:143:200:1.5:1.5:hit20@Base.BareHands@100.0@c",
+            "zai:200:300:3.0:0:hit20,60,100,140,180,220@Base.BaseballBat@3.0",
+            "zai:201:250:2.0:0:hit20,22@Base.Axe@100.0",
+            "zai:202:400:3.0:0:hit5@Base.LeadPipe@100.0@c",
+            "zai:203:400:4.0:-3.0:hit30@Base.Axe@100.0",
+        ],
+    );
+}
+
+#[test]
 fn zombiehit_matches_original() {
     // ZombieAiProbe's hit scenarios; keep in step with the `zombiehit` line of tools/oracle.sh
     check(
