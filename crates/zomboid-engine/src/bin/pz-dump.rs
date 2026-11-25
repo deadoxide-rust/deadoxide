@@ -110,7 +110,9 @@ fn main() {
         Some("inventory") if a.len() == 4 => {
             inventory_dump::inventory(Path::new(&a[2]), Path::new(&a[3]))
         }
-        Some("zombieai") | Some("zombiehit") | Some("zombiekill") if a.len() >= 4 => {
+        Some("zombieai") | Some("zombiehit") | Some("zombiekill") | Some("zombiestep")
+            if a.len() >= 4 =>
+        {
             zombieai(Path::new(&a[2]), &a[3..])
         }
         Some("pathfind" | "pathgraph" | "pathsearch") if a.len() >= 4 => {
