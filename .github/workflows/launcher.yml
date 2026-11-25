@@ -1,5 +1,5 @@
 name: launcher
-# Builds the Windows launcher and attaches it to a GitHub release when a v* tag is pushed.
+# Builds the Windows and Linux launchers and attaches them to a GitHub release when a v* tag is pushed.
 #   git tag v0.1.0 && git push origin v0.1.0
 on:
   push:
@@ -34,3 +34,33 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: deadoxide-windows-x64.zip*
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: System libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwayland-dev libxkbcommon-dev libxkbcommon-x11-dev libx11-xcb-dev \
+            libxcb-shape0-dev libxcb-xfixes0-dev libegl1-mesa-dev libclang-dev cmake pkg-config
+      - name: Test launcher logic
+        run: cargo test --release -p deadoxide-launcher
+      - name: Build
+        run: cargo build --release -p deadoxide-launcher -p zomboid-client
+      - name: Package
+        run: |
+          mkdir dist
+          cp target/release/deadoxide-launcher target/release/zomboid-client LICENSE README.md dist/
+          tar -czf deadoxide-linux-x64.tar.gz -C dist .
+          sha256sum deadoxide-linux-x64.tar.gz | cut -d' ' -f1 > deadoxide-linux-x64.tar.gz.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deadoxide-linux-x64
+          path: deadoxide-linux-x64.tar.gz*
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: deadoxide-linux-x64.tar.gz*

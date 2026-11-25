@@ -135,18 +135,65 @@ pub fn find_game() -> Option<PathBuf> {
         c.push(p.clone());
         d = p.parent().map(Path::to_path_buf);
     }
-    for pf in [
+    let mut steam: Vec<PathBuf> = [
         "C:/Program Files (x86)/Steam",
         "C:/Program Files/Steam",
         "D:/Steam",
         "D:/SteamLibrary",
         "E:/Games",
         "E:/SteamLibrary",
-    ] {
-        c.push(Path::new(pf).join("steamapps/common/ProjectZomboid"));
+    ]
+    .iter()
+    .map(PathBuf::from)
+    .collect();
+    if let Some(home) = std::env::var_os("HOME") {
+        steam.extend(linux_steam_roots(Path::new(&home)));
+    }
+    for root in steam {
+        c.extend(game_dirs(&root));
     }
     c.into_iter()
         .find(|p| p.join("projectzomboid.jar").exists())
+}
+
+/// Linux Steam installs: native (both the XDG path and the legacy `~/.steam` links) and Flatpak,
+/// plus every extra library listed in each one's `libraryfolders.vdf`.
+pub fn linux_steam_roots(home: &Path) -> Vec<PathBuf> {
+    let mut roots = vec![];
+    for base in [
+        ".local/share/Steam",
+        ".steam/steam",
+        ".steam/root",
+        ".var/app/com.valvesoftware.Steam/.local/share/Steam",
+    ] {
+        let root = home.join(base);
+        let vdf = root.join("steamapps/libraryfolders.vdf");
+        roots.push(root);
+        if let Ok(text) = std::fs::read_to_string(vdf) {
+            roots.extend(library_paths(&text));
+        }
+    }
+    roots
+}
+
+/// The `"path"` values of a Steam `libraryfolders.vdf`.
+pub fn library_paths(vdf: &str) -> Vec<PathBuf> {
+    vdf.lines()
+        .filter_map(|line| {
+            let mut quoted = line.split('"').skip(1).step_by(2);
+            (quoted.next() == Some("path"))
+                .then(|| quoted.next())
+                .flatten()
+                .map(|p| PathBuf::from(p.replace("\\\\", "\\")))
+        })
+        .collect()
+}
+
+/// Where the game lives inside a Steam library. The Linux depot puts the files one level
+/// deeper, in `ProjectZomboid/projectzomboid`.
+pub fn game_dirs(library: &Path) -> [PathBuf; 2] {
+    let game = library.join("steamapps/common/ProjectZomboid");
+    [game.join("projectzomboid"), game]
 }
 
 pub fn find_client() -> Option<PathBuf> {
@@ -279,5 +326,43 @@ mod tests {
         m.sha256 = "0".repeat(64);
         assert!(install(&m, &site(), &dir).unwrap_err().contains("sha256"));
         assert!(!dir.exists());
+    }
+
+    #[test]
+    fn reads_steam_library_paths() {
+        let vdf = "\"libraryfolders\"\n{\n\t\"0\"\n\t{\n\t\t\"path\"\t\t\"/home/u/.local/share/Steam\"\n\t\t\"label\"\t\t\"\"\n\t\t\"apps\"\n\t\t{\n\t\t\t\"108600\"\t\t\"0\"\n\t\t}\n\t}\n\t\"1\"\n\t{\n\t\t\"path\"\t\t\"D:\\\\SteamLibrary\"\n\t}\n}\n";
+        assert_eq!(
+            library_paths(vdf),
+            [
+                PathBuf::from("/home/u/.local/share/Steam"),
+                PathBuf::from("D:\\SteamLibrary")
+            ]
+        );
+    }
+
+    #[test]
+    fn finds_the_linux_depot_in_an_extra_flatpak_library() {
+        let home = std::env::temp_dir().join(format!("deadoxide-home-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&home);
+        let library = home.join("games");
+        let flatpak = home.join(".var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps");
+        std::fs::create_dir_all(&flatpak).unwrap();
+        std::fs::write(
+            flatpak.join("libraryfolders.vdf"),
+            format!(
+                "\"libraryfolders\"\n{{\n\t\"1\"\n\t{{\n\t\t\"path\"\t\t\"{}\"\n\t}}\n}}\n",
+                library.display()
+            ),
+        )
+        .unwrap();
+        let game = library.join("steamapps/common/ProjectZomboid/projectzomboid");
+        std::fs::create_dir_all(&game).unwrap();
+        std::fs::write(game.join("projectzomboid.jar"), b"").unwrap();
+        let found = linux_steam_roots(&home)
+            .iter()
+            .flat_map(|r| game_dirs(r))
+            .find(|p| p.join("projectzomboid.jar").exists());
+        assert_eq!(found, Some(game));
+        let _ = std::fs::remove_dir_all(&home);
     }
 }

@@ -218,16 +218,30 @@ impl Launcher {
     fn play_original(&mut self) {
         let Some(g) = &self.game else { return };
         let _ = std::fs::create_dir_all(&self.profile);
-        let r = Command::new(g.join("jre64/bin/java.exe"))
+        // Same JVM settings as the game's own ProjectZomboid64.json for each platform.
+        let (java, library_path, classpath) = if cfg!(windows) {
+            (
+                "jre64/bin/java.exe",
+                "-Djava.library.path=win64/;.",
+                ".;projectzomboid.jar",
+            )
+        } else {
+            (
+                "jre64/bin/java",
+                "-Djava.library.path=natives/",
+                ".:projectzomboid.jar",
+            )
+        };
+        let r = Command::new(g.join(java))
             .current_dir(g)
             .args([
                 "--enable-native-access=ALL-UNNAMED",
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-Xmx3072m",
                 "-XX:+UseZGC",
-                "-Djava.library.path=win64/;.",
+                library_path,
                 "-cp",
-                ".;projectzomboid.jar",
+                classpath,
                 "zombie.gameStates.MainScreenState",
                 "-nosteam",
             ])
