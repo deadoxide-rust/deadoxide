@@ -1,12 +1,11 @@
-## Oracle blocked since 2026-11-25: the Steam install moved to build 26486631 (measured)
+## Oracle restored on 2026-11-25 (measured)
 
-The port is pinned to Steam build 25485521 (42.21.0): `projectzomboid.jar` next to the repo still has the sha256 of
-`reference.lock.json` (checked 2026-11-25). The macOS client `Project Zomboid.app` whose dylibs `$PZ_NATIVES` points to is gone:
-Steam updated the app to build 26486631 and `steamapps/common/ProjectZomboid` now holds only the server scripts. Every
-`sh tools/oracle.sh <case>` therefore stops with "no natives". Results recorded before that date stay valid; nothing after it
-(branches `e65-zombie-hit` kill work, `e68-pathfind` native bisect, `e67-inventory` stage 6 bags: its `inventory` hash test fails
-against the committed golden) is verified. To continue: restore build 25485521 (Steam beta branch, auto-update off) or set
-`PZ_NATIVES` to matching macOS natives.
+On 2026-11-25 Steam moved the install to build 26486631 and the macOS client `Project Zomboid.app` (the `$PZ_NATIVES` dylibs)
+disappeared until Steam re-downloaded it; for that stretch no `sh tools/oracle.sh <case>` could run. The port stays pinned to build
+25485521 (42.21.0): `projectzomboid.jar` next to the repo still has the sha256 of `reference.lock.json`, and with the re-downloaded
+natives `sh tools/engine_check.sh` passed on all 91 oracle cases (including the FMOD banks, which run the native FMOD) and 88 oracle
+hash tests. UNKNOWN: whether the natives of build 26486631 differ from those of 25485521 in a way these cases do not reach (the
+native pathfinder `libPZPathFind`, assimp, `libjavafmod` behaviour on other inputs): the cases above are the evidence.
 
 ## FMOD sound banks by direct port/reverse engineering (2026-11-17)
 FMOD ships as a closed binary (`libfmodstudio` 2.03.09, reached through `fmod.javafmodJNI`) and the repository holds no source or format documentation, so there is nothing to port line by line: the bank format in `crates/zomboid-engine/src/native/fmod/` (`riff.rs`, `bank.rs`, `strings.rs`, `events.rs`, `fsb.rs`, `studio.rs`) and the `FMODManager.init` tables in `src/fmod/fmod/fmod_manager.rs` are reverse engineered from `media/sound/banks/Desktop/{ZomboidSound.strings,ZomboidMusic,ZomboidSound,ZomboidSoundMP}.bank` (and `radio.bank`, which `init()` does not load) and every claim is an oracle diff against the game's OWN `FMODManager.init()` running headless with the game's natives (`PZ_NATIVES`, the Steam macOS `Contents/Java`), `FmodBanksProbe` (`tests/original_probe`) against `pz-dump fmod*`. The banks (1.3 GB) are read with ranged reads; the sample data is never loaded.

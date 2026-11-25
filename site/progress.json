@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-21",
+  "generated": "2026-11-25",
   "game": "Project Zomboid 42.21.0 (Steam build 25485521)",
   "overall": 25.6,
   "note": "Overall and area percentages are subjective weighted estimates, not measured game parity. Facts list the limited measured cases. Full compatibility is unknown.",
@@ -95,6 +95,7 @@
       "zombie",
       "zombieai",
       "zombiehit",
+      "zombiekill",
       "zoneoutlines",
       "zonetriangles"
     ]
@@ -108,7 +109,7 @@
       "score": 0.8125,
       "how": "share of the game's format families we read (list below); coverage inside each family is also incomplete",
       "facts": [
-        "direct port from decompiled Java: 2064 of 46318 method names (4.46%) in 506 of 3432 classes; byte-identical to the original in 87 oracle cases (actioncontext, animalzones, animclips, animscene, animsets, basements, body, chunkobjects, chunksave, climate, clothingitems, collide, doortoggle, entitysprites, erosion, erosionini, fbxanims, fbxanimscene, fbxmodels, fbxmodelscene, fbxscene, fdlibm, fmodbanks, fmodevents, fmodsamples, fmodstrings, fonts, gametime, glbanims, glbanimscene, glbmodels, glbmodelscene, glbscene, gos, invbytes, inventory, isoregion, items, javachars, loot, los, losdoors, lotheaders, lotpack, luaboot, luaclient, luacompile, luagame, luaload, luaos, luaserver, luastring, luavm, mapmeta, mapver, mapzone, metagrid, moddata, mods, outfitrandom, outfits, pathfind, pathgraph, pathsearch, radio, recipes, sandbox, savemeta, scriptparser, sounds, specialcollide, stairs, tiledefs, translator, txtmodels, vehicles, visited, worlddictionary, xmodels, xmodelscene, xscene, xui, zombie, zombieai, zombiehit, zoneoutlines, zonetriangles)",
+        "direct port from decompiled Java: 2064 of 46318 method names (4.46%) in 506 of 3432 classes; byte-identical to the original in 88 oracle cases (actioncontext, animalzones, animclips, animscene, animsets, basements, body, chunkobjects, chunksave, climate, clothingitems, collide, doortoggle, entitysprites, erosion, erosionini, fbxanims, fbxanimscene, fbxmodels, fbxmodelscene, fbxscene, fdlibm, fmodbanks, fmodevents, fmodsamples, fmodstrings, fonts, gametime, glbanims, glbanimscene, glbmodels, glbmodelscene, glbscene, gos, invbytes, inventory, isoregion, items, javachars, loot, los, losdoors, lotheaders, lotpack, luaboot, luaclient, luacompile, luagame, luaload, luaos, luaserver, luastring, luavm, mapmeta, mapver, mapzone, metagrid, moddata, mods, outfitrandom, outfits, pathfind, pathgraph, pathsearch, radio, recipes, sandbox, savemeta, scriptparser, sounds, specialcollide, stairs, tiledefs, translator, txtmodels, vehicles, visited, worlddictionary, xmodels, xmodelscene, xscene, xui, zombie, zombieai, zombiehit, zombiekill, zoneoutlines, zonetriangles)",
         "format families read: 13 of 16",
         "cell header parsed: 120687 of 123391 bytes",
         "tile names resolved: 25981 of 26063",

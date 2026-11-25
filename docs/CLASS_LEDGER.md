@@ -416,7 +416,7 @@ Method counts are distinct method names per top-level file (overloads and inner 
 | zombie.iso.objects.IsoClothingWasher | 1 / 14 | crates/zomboid-engine/src/zombie/iso/chunk_save.rs |
 | zombie.iso.objects.IsoCombinationWasherDryer | 1 / 18 | crates/zomboid-engine/src/zombie/iso/chunk_save.rs |
 | zombie.iso.objects.IsoCurtain | 1 / 22 | crates/zomboid-engine/src/zombie/iso/cell_loader.rs, crates/zomboid-engine/src/zombie/iso/chunk_save.rs, crates/zomboid-engine/src/zombie/iso/iso_object.rs |
-| zombie.iso.objects.IsoDeadBody | 1 / 135 | crates/zomboid-engine/src/zombie/iso/objects/iso_dead_body.rs |
+| zombie.iso.objects.IsoDeadBody | 1 / 135 | crates/zomboid-engine/src/zombie/characters/iso_zombie_kill.rs, crates/zomboid-engine/src/zombie/iso/objects/iso_dead_body.rs |
 | zombie.iso.objects.IsoDoor | 3 / 132 | crates/zomboid-engine/src/zombie/iso/cell_loader.rs, crates/zomboid-engine/src/zombie/iso/chunk_save.rs, crates/zomboid-engine/src/zombie/iso/iso_object.rs, crates/zomboid-engine/src/zombie/pathfind/path_map.rs |
 | zombie.iso.objects.IsoFireplace | 1 / 33 | crates/zomboid-engine/src/zombie/iso/chunk_save.rs |
 | zombie.iso.objects.IsoLightSwitch | 1 / 55 | crates/zomboid-engine/src/zombie/iso/chunk_save.rs |
