@@ -210,12 +210,14 @@ mod tests {
 
     fn archive(id: &str, entries: &[(&str, &[u8])]) -> (Mod, PathBuf) {
         use std::io::Write as _;
-        let dir = std::env::temp_dir().join(format!("deadoxide-archive-{}-{id}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("deadoxide-archive-{}-{id}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let mut z = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
         for (entry, body) in entries {
-            z.start_file(*entry, zip::write::SimpleFileOptions::default()).unwrap();
+            z.start_file(*entry, zip::write::SimpleFileOptions::default())
+                .unwrap();
             z.write_all(body).unwrap();
         }
         let bytes = z.finish().unwrap().into_inner();
