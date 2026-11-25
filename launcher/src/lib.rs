@@ -2,7 +2,7 @@
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 pub const SITE: &str = "https://deadoxide-rust.github.io/deadoxide/";
 
@@ -68,6 +68,26 @@ pub fn get_bytes(url: &str) -> Result<Vec<u8>, String> {
     Ok(v)
 }
 
+/// The rule of `zip`'s own `ZipFileData::enclosed_name` (2.6.1), applied to a
+/// name whose Windows separators have been turned into `/`: the path is
+/// returned only when it cannot escape the directory it is later joined to.
+fn enclosed_path(name: &str) -> Option<PathBuf> {
+    if name.contains('\0') {
+        return None;
+    }
+    let path = PathBuf::from(name);
+    let mut depth = 0usize;
+    for component in path.components() {
+        match component {
+            Component::Prefix(_) | Component::RootDir => return None,
+            Component::ParentDir => depth = depth.checked_sub(1)?,
+            Component::Normal(_) => depth += 1,
+            Component::CurDir => (),
+        }
+    }
+    Some(path)
+}
+
 /// Verify sha256, then extract. Entries that would escape `dest` (zip-slip) are rejected.
 pub fn install(m: &Mod, base: &str, mods_dir: &Path) -> Result<PathBuf, String> {
     let url = if m.url.contains("://") || m.url.starts_with("file:") {
@@ -87,8 +107,9 @@ pub fn install(m: &Mod, base: &str, mods_dir: &Path) -> Result<PathBuf, String> 
     let mut z = zip::ZipArchive::new(std::io::Cursor::new(data)).map_err(|e| e.to_string())?;
     for i in 0..z.len() {
         let mut f = z.by_index(i).map_err(|e| e.to_string())?;
-        let rel = f
-            .enclosed_name()
+        // Archives built on Windows store `\\` as the separator, which on Linux
+        // is an ordinary file name character: normalize before resolving it.
+        let rel = enclosed_path(&f.name().replace('\\', "/"))
             .ok_or_else(|| format!("unsafe path in archive: {}", f.name()))?;
         let out = dest.join(rel);
         if f.is_dir() {
@@ -185,6 +206,68 @@ mod tests {
         assert!(lua.contains("mod loaded"));
         assert!(out.join("mod.info").exists());
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    fn archive(id: &str, entries: &[(&str, &[u8])]) -> (Mod, PathBuf) {
+        use std::io::Write as _;
+        let dir = std::env::temp_dir().join(format!("deadoxide-archive-{}-{id}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut z = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+        for (entry, body) in entries {
+            z.start_file(*entry, zip::write::SimpleFileOptions::default()).unwrap();
+            z.write_all(body).unwrap();
+        }
+        let bytes = z.finish().unwrap().into_inner();
+        let file = dir.join("mod.zip");
+        std::fs::write(&file, &bytes).unwrap();
+        let sha256 = Sha256::digest(&bytes)
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>();
+        let m = Mod {
+            id: id.into(),
+            name: id.into(),
+            version: "1.0.0".into(),
+            author: "test".into(),
+            description: String::new(),
+            url: format!("file:{}", file.display()),
+            sha256,
+        };
+        (m, dir.join("mods"))
+    }
+
+    #[test]
+    fn windows_separators_become_directories() {
+        let (m, mods) = archive(
+            "backslash",
+            &[
+                ("media\\lua\\client\\HelloDeadOxide.lua", b"mod loaded"),
+                ("mod.info", b"name=Hello"),
+            ],
+        );
+        let out = install(&m, "file:", &mods).unwrap();
+        let lua = std::fs::read_to_string(out.join("media/lua/client/HelloDeadOxide.lua")).unwrap();
+        assert!(lua.contains("mod loaded"));
+        assert!(!out.join("media\\lua\\client\\HelloDeadOxide.lua").exists());
+        let _ = std::fs::remove_dir_all(&mods);
+    }
+
+    #[test]
+    fn traversal_is_rejected() {
+        let (m, mods) = archive("traversal", &[("../escape.lua", b"x")]);
+        let err = install(&m, "file:", &mods).unwrap_err();
+        assert!(err.contains("unsafe path"), "{err}");
+        assert!(!mods.join("escape.lua").exists());
+        let _ = std::fs::remove_dir_all(&mods);
+    }
+
+    #[test]
+    fn parent_dir_that_stays_inside_still_resolves() {
+        let (m, mods) = archive("inside", &[("media/../mod.info", b"name=Hello")]);
+        let out = install(&m, "file:", &mods).unwrap();
+        assert!(out.join("mod.info").is_file());
+        let _ = std::fs::remove_dir_all(&mods);
     }
 
     #[test]
