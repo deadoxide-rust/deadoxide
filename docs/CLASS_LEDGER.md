@@ -4,7 +4,7 @@ Source: decompiled `projectzomboid.jar` sha256 `e1a69eb743ede60b213a0fe7f8b83d4f
 A method counts as cited when a Rust doc comment names it. Citing is a pointer for reviewers, not proof of parity: evidence lives in docs/COMPATIBILITY.md.
 Method counts are distinct method names per top-level file (overloads and inner classes merged).
 
-**Total: 506 of 3432 classes touched, 2064 of 46318 method names cited (4.5%), 965313 decompiled lines.**
+**Total: 506 of 3432 classes touched, 2066 of 46318 method names cited (4.5%), 965313 decompiled lines.**
 
 | Package | Classes | Touched | Method names | Cited | Lines |
 |---|---:|---:|---:|---:|---:|
@@ -23,7 +23,7 @@ Method counts are distinct method names per top-level file (overloads and inner 
 | zombie.worldMap | 85 | 7 | 1328 | 5 (0.4%) | 18604 |
 | zombie.ui | 52 | 7 | 1026 | 53 (5.2%) | 16932 |
 | zombie.Lua | 8 | 4 | 875 | 19 (2.2%) | 14841 |
-| zombie.ai | 99 | 13 | 875 | 29 (3.3%) | 14312 |
+| zombie.ai | 99 | 13 | 875 | 31 (3.5%) | 14312 |
 | zombie.erosion | 23 | 22 | 216 | 95 (44.0%) | 13296 |
 | se | 70 | 21 | 692 | 210 (30.3%) | 11221 |
 | zombie.gameStates | 19 | 2 | 429 | 12 (2.8%) | 9502 |
@@ -139,7 +139,7 @@ Method counts are distinct method names per top-level file (overloads and inner 
 | zombie.ai.states.ZombieFallDownState | 2 / 6 | crates/zomboid-engine/src/zombie/characters/iso_zombie.rs, crates/zomboid-engine/src/zombie/characters/iso_zombie_fall.rs |
 | zombie.ai.states.ZombieGetUpState | 2 / 4 | crates/zomboid-engine/src/zombie/characters/iso_zombie.rs, crates/zomboid-engine/src/zombie/characters/iso_zombie_fall.rs |
 | zombie.ai.states.ZombieIdleState | 3 / 7 | crates/zomboid-engine/src/zombie/characters/iso_zombie.rs |
-| zombie.ai.states.ZombieOnGroundState | 3 / 8 | crates/zomboid-engine/src/zombie/characters/iso_zombie.rs, crates/zomboid-engine/src/zombie/characters/iso_zombie_fall.rs |
+| zombie.ai.states.ZombieOnGroundState | 5 / 8 | crates/zomboid-engine/src/zombie/characters/iso_zombie.rs, crates/zomboid-engine/src/zombie/characters/iso_zombie_fall.rs |
 | zombie.asset.AssetManager | 1 / 21 | crates/zomboid-engine/src/zombie/core/skinnedmodel/advancedanimation/anim_node_asset_manager.rs |
 | zombie.audio.GameSound | 5 / 10 | crates/zomboid-engine/src/zombie/audio/game_sound.rs |
 | zombie.audio.GameSoundClip | 4 / 16 | crates/zomboid-engine/src/zombie/audio/game_sound.rs |
