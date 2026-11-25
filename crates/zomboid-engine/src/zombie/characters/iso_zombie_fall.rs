@@ -9,31 +9,76 @@
 //! stand on it.
 use super::iso_zombie::{IsoZombie, ZombieState, ZombieWorld};
 use super::iso_zombie_sp::SpRead;
+use crate::zombie::core::math::pz_math;
 use crate::zombie::core::random::rand_abstract::RandAbstract;
 
 /// The farthest a point `DoCollisionBoneCheck` tests can be from the zombie's position: a bone of a lying skeleton
 /// (spine, calves, head: at most 1.3 from its root) plus the largest radius it tests (0.32) plus the wielder's reach
 /// along its forward direction (0.3). A player farther away cannot be standing on the zombie.
-const STEPPED_ON_REACH: f32 = 1.3 + 0.32 + 0.3;
+/// The bone world positions `Model.boneToWorldCoords` gives: the headless animation player never poses its bones
+/// (`IsoGameCharacter.updateAnimPlayer` sets `updateBones = false`, so `AnimationPlayer.updateInternal` only does
+/// `updateAnimation_NonVisualOnly` and `modelTransforms` stay identity), so every bone's `m03/m13/m23` is 0 and
+/// `vectorToWorldCoords` leaves the character's own position.
+const WIELDER_FORWARD: (f32, f32) = (-1.0, 0.0);
+
+/// zombie.ai.states.ZombieOnGroundState.isCharacterStandingOnOther(standing, prone): the spine (0.32), the left and right
+/// calf (0.18) and the head (0.28) are tested in turn by `DoCollisionBoneCheck`; with every bone at the prone zombie's
+/// own position they differ only in the length.
+fn is_character_standing_on_other(
+    standing: &super::iso_zombie_sp::PlayerStandIn,
+    bone_x: f32,
+    bone_y: f32,
+) -> bool {
+    [0.32f32, 0.18, 0.18, 0.28]
+        .iter()
+        .any(|&len| do_collision_bone_check(standing, bone_x, bone_y, len))
+}
+
+/// zombie.ai.states.ZombieOnGroundState.DoCollisionBoneCheck: `x / 10.0F` for x in 1..=10, the standing character's
+/// position moved by its forward direction * 0.3F * delta, the horizontal distance to the bone under `tempoLengthTest`.
+fn do_collision_bone_check(
+    standing: &super::iso_zombie_sp::PlayerStandIn,
+    bone_x: f32,
+    bone_y: f32,
+    test: f32,
+) -> bool {
+    for x in 1..=10 {
+        let delta = x as f32 / 10.0f32;
+        let tx = standing.x + WIELDER_FORWARD.0 * 0.3f32 * delta;
+        let ty = standing.y + WIELDER_FORWARD.1 * 0.3f32 * delta;
+        let vx = bone_x - tx;
+        let vy = bone_y - ty;
+        let len_sq = vx * vx + vy * vy + 0.0f32 * 0.0f32;
+        if (f64::from(len_sq).sqrt() as f32) < test {
+            return true;
+        }
+    }
+    false
+}
 
 impl IsoZombie {
-    /// IsoGameCharacter.isBeingSteppedOn for the single-player zombie: `false` unless it lies on the floor and the
-    /// player stand-in is close enough to test its bones (`Err` then: the pose is not ported).
+    /// IsoGameCharacter.isBeingSteppedOn for the single-player zombie: `false` unless it lies on the floor; then each
+    /// character of the 3x3 squares around it that is not on the floor (the player stand-in, when its square is one of
+    /// them) is tested by `ZombieOnGroundState.isCharacterStandingOnOther`.
     pub(crate) fn is_being_stepped_on(&self, rd: &SpRead) -> Result<bool, String> {
         if !self.on_floor {
             return Ok(false);
         }
         let p = &rd.world.player;
         let m = &self.character.moving;
-        let dx = f64::from(p.x - m.x);
-        let dy = f64::from(p.y - m.y);
-        let dist = (dx * dx + dy * dy).sqrt() as f32;
-        if dist < STEPPED_ON_REACH {
-            return Err(format!(
-                "IsoGameCharacter.isBeingSteppedOn: the player is {dist} from the lying zombie, its bones' world positions are not ported"
-            ));
+        let (zx, zy, zz) = (
+            pz_math::fastfloor(m.x),
+            pz_math::fastfloor(m.y),
+            pz_math::fastfloor(m.z),
+        );
+        // the squares `getGridSquare(floor(x) + dx, floor(y) + dy, floor(z))`, whose moving objects hold the player
+        let in_reach = pz_math::fastfloor(p.z) == zz
+            && (pz_math::fastfloor(p.x) - zx).abs() <= 1
+            && (pz_math::fastfloor(p.y) - zy).abs() <= 1;
+        if !in_reach {
+            return Ok(false);
         }
-        Ok(false)
+        Ok(is_character_standing_on_other(p, m.x, m.y))
     }
 
     /// zombie.characters.IsoZombie.setEatBodyTarget(null, force): the overload without a speed evaluates

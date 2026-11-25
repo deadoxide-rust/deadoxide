@@ -413,6 +413,23 @@ fn pathsearch_matches_original() {
 }
 
 #[test]
+fn zombiestep_matches_original() {
+    // ZombieAiProbe's stepped-on scenarios; keep in step with the `zombiestep` line of tools/oracle.sh
+    check(
+        "zombiestep",
+        &[
+            "zai:47:500:-0.5:0:hit20@Base.Axe@1.0@c",
+            "zai:46:500:0:0.5:hit20@Base.BaseballBat@1.0@c",
+            "zai:71:500:0.5:0:hit20@Base.BaseballBat@1.0@c",
+            "zai:72:500:0.2:0.2:hit20@Base.LeadPipe@1.0@c",
+            "zai:73:500:-1.0:0.3:hit20@Base.Axe@1.0@c",
+            "zai:74:500:0.9:0:hit20@Base.HuntingKnife@1.0@c",
+            "zai:75:300:0.4:0:hit20@Base.BaseballBat@100.0",
+        ],
+    );
+}
+
+#[test]
 fn zombiekill_matches_original() {
     // ZombieAiProbe's kill scenarios; keep in step with the `zombiekill` line of tools/oracle.sh
     check(

@@ -296,6 +296,13 @@ sel zombiekill && server_case zombiekill ZombieAiProbe \
  "zai:200:300:3.0:0:hit20,60,100,140,180,220@Base.BaseballBat@3.0" \
  "zai:201:250:2.0:0:hit20,22@Base.Axe@100.0" "zai:202:400:3.0:0:hit5@Base.LeadPipe@100.0@c" \
  "zai:203:400:4.0:-3.0:hit30@Base.Axe@100.0"
+# E65d: `isBeingSteppedOn` (the bone world positions of the headless animation player: every bone at the zombie's own
+# position) with the player stand-in close to a lying zombie: the reanimate timer restarts, the get-up comes late
+sel zombiestep && server_case zombiestep ZombieAiProbe \
+  "zai:47:500:-0.5:0:hit20@Base.Axe@1.0@c" "zai:46:500:0:0.5:hit20@Base.BaseballBat@1.0@c" \
+  "zai:71:500:0.5:0:hit20@Base.BaseballBat@1.0@c" "zai:72:500:0.2:0.2:hit20@Base.LeadPipe@1.0@c" \
+  "zai:73:500:-1.0:0.3:hit20@Base.Axe@1.0@c" "zai:74:500:0.9:0:hit20@Base.HuntingKnife@1.0@c" \
+  "zai:75:300:0.4:0:hit20@Base.BaseballBat@100.0"
 # the save's global_mod_data.bin (GlobalModData.load) and iTrack.bin (InstanceTracker.load, exported as text and CSV)
 sel moddata && server_case moddata ModDataProbe "$HERE/profile/Saves/Sandbox/2026-11-07_22-34-13"
 # the outfits of media/clothing/clothing.xml (OutfitManager) and PersistentOutfits with the save's z_outfits.bin
