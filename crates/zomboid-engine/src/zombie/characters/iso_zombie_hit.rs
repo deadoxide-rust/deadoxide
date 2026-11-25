@@ -58,6 +58,8 @@ pub struct HitWeapon {
     pub push_back_mod: f32,
     pub knock_back_on_no_death: bool,
     pub splat_blood_on_no_death: bool,
+    /// `getSplatNumber()`: the script's `SplatNumber` (default 2), the blood splats of a kill
+    pub splat_number: i32,
     /// `getCriticalDamageMultiplier()`: the script's `critDmgMultiplier` times the Sharpness multiplier
     pub critical_damage_multiplier: f32,
     /// `hitAngleMod`, radians
@@ -144,6 +146,10 @@ impl HitWeapon {
             push_back_mod: f("pushBackMod")?,
             knock_back_on_no_death: b("knockBackOnNoDeath")?,
             splat_blood_on_no_death: b("splatBloodOnNoDeath")?,
+            splat_number: match item.get("splatNumber") {
+                Some(Value::I32(v)) => *v,
+                _ => return Err("Item field splatNumber is not an integer".to_string()),
+            },
             critical_damage_multiplier,
             // `(float) Math.toRadians(hitAngleMod)`
             hit_angle_mod: f64::from(f("hitAngleMod")?).to_radians() as f32,
@@ -427,15 +433,16 @@ impl IsoZombie {
             }
         }
         if self.is_dead() {
-            return Err(
-                "IsoGameCharacter.hitConsequences: the kill (Kill/die, the corpse) is not ported"
-                    .into(),
-            );
+            // `!isOnKillDone()`: wielder.setZombieKills(+1), then `Kill(weapon, wielder)` (no server, no client)
+            if !self.sp.on_kill_done {
+                self.kill(world, rd, weapon)?;
+            }
+        } else {
+            if weapon.splat_blood_on_no_death {
+                self.splat_blood(world, rd, 2, 0.2f32)?;
+            }
+            // `!weapon.isRanged() && knockBackOnNoDeath`: wielder.xp.AddXP(Strength, 2.0F), invisible to the zombie
         }
-        if weapon.splat_blood_on_no_death {
-            self.splat_blood(world, rd, 2, 0.2f32)?;
-        }
-        // `!weapon.isRanged() && knockBackOnNoDeath`: wielder.xp.AddXP(Strength, 2.0F), invisible to the zombie
         // IsoZombie.hitConsequences
         let anim = self
             .anim
@@ -540,7 +547,7 @@ impl IsoZombie {
 
     /// IsoGameCharacter.splatBlood(dist, alpha) -> IsoGridSquare.splatBlood: the draws of the wall splats on the
     /// west and north walls within `dist` squares (the `IsoWallBloodSplat` objects themselves are not kept).
-    fn splat_blood(
+    pub(crate) fn splat_blood(
         &mut self,
         world: &mut ZombieWorld,
         rd: &SpRead,

@@ -280,6 +280,22 @@ sel zombiehit && server_case zombiehit ZombieAiProbe \
   "zai:48:200:3.0:3.0:hit25@Base.LeadPipe@1.0@c" "zai:51:250:2.0:0:hit20,60@Base.BaseballBat@1.0" \
   "zai:52:250:0.5:0:hit20,50,80,110,140@Base.LeadPipe@1.0" "zai:53:250:3.0:0:hit20,25,30,35,40@Base.BareHands@1.0" \
   "zai:54:250:2.0:0:hit20,60,100@Base.Axe@0.5" "zai:55:250:0.5:0:hit20,24@Base.HuntingKnife@0.5"
+# E65c: a melee hit that kills (health <= 0): Kill, onKilled, DoDeath (the blood splat, giblet and sound draws), the fall,
+# die() and the IsoDeadBody it leaves (a CORPSE line), from several directions and weapons, repeated hits to the kill
+sel zombiekill && server_case zombiekill ZombieAiProbe \
+ "zai:100:300:2.0:0:hit20@Base.BaseballBat@100.0" "zai:101:170:0.5:0:hit20@Base.BaseballBat@100.0@c" \
+ "zai:102:200:0:-2.0:hit20@Base.BaseballBat@100.0" "zai:103:200:1.5:1.5:hit20@Base.BaseballBat@100.0@c" \
+ "zai:110:300:2.0:0:hit20@Base.Axe@100.0" "zai:111:170:0.5:0:hit20@Base.Axe@100.0@c" \
+ "zai:112:200:0:-2.0:hit20@Base.Axe@100.0" "zai:113:200:1.5:1.5:hit20@Base.Axe@100.0@c" \
+ "zai:120:300:2.0:0:hit20@Base.HuntingKnife@100.0" "zai:121:170:0.5:0:hit20@Base.HuntingKnife@100.0@c" \
+ "zai:122:200:0:-2.0:hit20@Base.HuntingKnife@100.0" "zai:123:200:1.5:1.5:hit20@Base.HuntingKnife@100.0@c" \
+ "zai:130:300:2.0:0:hit20@Base.LeadPipe@100.0" "zai:131:170:0.5:0:hit20@Base.LeadPipe@100.0@c" \
+ "zai:132:200:0:-2.0:hit20@Base.LeadPipe@100.0" "zai:133:200:1.5:1.5:hit20@Base.LeadPipe@100.0@c" \
+ "zai:140:300:2.0:0:hit20@Base.BareHands@100.0" "zai:141:170:0.5:0:hit20@Base.BareHands@100.0@c" \
+ "zai:142:200:0:-2.0:hit20@Base.BareHands@100.0" "zai:143:200:1.5:1.5:hit20@Base.BareHands@100.0@c" \
+ "zai:200:300:3.0:0:hit20,60,100,140,180,220@Base.BaseballBat@3.0" \
+ "zai:201:250:2.0:0:hit20,22@Base.Axe@100.0" "zai:202:400:3.0:0:hit5@Base.LeadPipe@100.0@c" \
+ "zai:203:400:4.0:-3.0:hit30@Base.Axe@100.0"
 # the save's global_mod_data.bin (GlobalModData.load) and iTrack.bin (InstanceTracker.load, exported as text and CSV)
 sel moddata && server_case moddata ModDataProbe "$HERE/profile/Saves/Sandbox/2026-11-07_22-34-13"
 # the outfits of media/clothing/clothing.xml (OutfitManager) and PersistentOutfits with the save's z_outfits.bin

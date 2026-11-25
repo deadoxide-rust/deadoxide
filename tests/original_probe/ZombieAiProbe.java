@@ -164,6 +164,7 @@ public class ZombieAiProbe {
         z.setZ(0);
         cell.getObjectList().add(z);
         Object pfb = z.getPathFindBehavior2();
+        java.util.Set<zombie.iso.objects.IsoDeadBody> seenCorpses = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         int prev = (Integer) ActionContextProbe.g(RandStandard.INSTANCE, "id");
         for (int n = 1; n <= ticks; n++) {
             curTick = n;
@@ -205,6 +206,10 @@ public class ZombieAiProbe {
                 + " goal=" + ActionContextProbe.g(pfb, "goal")
                 + " " + vars(z));
             prev = draws;
+            // a corpse the zombie left on the squares around it (`die()` -> `becomeCorpse()`), printed once when it appears
+            for (zombie.iso.objects.IsoDeadBody body : corpses(cell)) {
+                if (seenCorpses.add(body)) out.println(corpseLine(n, body));
+            }
             // PZ_DBG=<from>:<to>: the movement internals of those ticks on stderr (debug aid, not part of the oracle)
             String dbg = System.getenv("PZ_DBG");
             if (dbg != null) {
@@ -213,12 +218,17 @@ public class ZombieAiProbe {
                     System.err.println("DBG " + n + " x=" + z.getX() + " y=" + z.getY() + " nx=" + z.getNextX() + " ny=" + z.getNextY()
                         + " lx=" + z.getLastX() + " ly=" + z.getLastY() + " tx=" + ActionContextProbe.g(pfb, "targetX") + " ty=" + ActionContextProbe.g(pfb, "targetY")
                         + " updating=" + z.isAnimationUpdatingThisFrame() + " path2=" + (z.getPath2() != null)
-                        + " impulse=" + z.getImpulsex() + "," + z.getImpulsey());
+                        + " impulse=" + z.getImpulsex() + "," + z.getImpulsey() + " cur=" + (z.getCurrentSquare() != null) + " last=" + (z.getLastSquare() != null));
                 }
             }
         }
         out.println("END " + spec + " draws=" + ActionContextProbe.g(RandStandard.INSTANCE, "id"));
         cell.getObjectList().remove(z);
+        // the corpse (an `IsoDeadBody` on a square's static moving objects, counted by `CorpseCount`) goes with the scenario
+        for (zombie.iso.objects.IsoDeadBody body : corpses(cell)) {
+            body.removeFromWorld();
+            body.getSquare().getStaticMovingObjects().remove(body);
+        }
         // leave no trace for the next scenario of this JVM: the zombie is in the moving-object list of every square it
         // stood on or moved from, and a rustled bush keeps its `objectRenderEffects` (the headless world never updates it)
         sq.getMovingObjects().remove(z);
@@ -246,6 +256,35 @@ public class ZombieAiProbe {
         for (java.util.Map.Entry<String, Integer> e : saved.entrySet()) {
             ActionContextProbe.setOption(ActionContextProbe.g(SandboxOptions.instance.lore, Character.toLowerCase(e.getKey().charAt(0)) + e.getKey().substring(1)), e.getValue());
         }
+    }
+
+    // the `IsoDeadBody` objects on the squares around the zombie's (8280, 11670, 0)
+    static java.util.List<zombie.iso.objects.IsoDeadBody> corpses(IsoCell cell) {
+        java.util.List<zombie.iso.objects.IsoDeadBody> list = new java.util.ArrayList<>();
+        for (int cx = 8279; cx <= 8281; cx++) {
+            for (int cy = 11669; cy <= 11671; cy++) {
+                IsoGridSquare s = cell.getGridSquare(cx, cy, 0);
+                if (s == null) continue;
+                for (int i = 0; i < s.getStaticMovingObjects().size(); i++) {
+                    if (s.getStaticMovingObjects().get(i) instanceof zombie.iso.objects.IsoDeadBody b) list.add(b);
+                }
+            }
+        }
+        return list;
+    }
+
+    // `CORPSE T <tick> ...`: what `IsoDeadBody(died)` copied from the zombie
+    static String corpseLine(int tick, zombie.iso.objects.IsoDeadBody b) throws Exception {
+        zombie.iso.Vector2 fd = (zombie.iso.Vector2) ActionContextProbe.g(b, "forwardDirection");
+        return "CORPSE T " + tick + " x=" + b.getX() + " y=" + b.getY() + " z=" + b.getZ()
+            + " sq=" + b.getSquare().getX() + "," + b.getSquare().getY() + "," + b.getSquare().getZ()
+            + " angle=" + ActionContextProbe.g(b, "angle") + " fwd=" + fd.x + "," + fd.y
+            + " fallOnFront=" + b.isFallOnFront() + " killedByFall=" + b.isKilledByFall() + " crawling=" + b.isCrawling()
+            + " ragdollFall=" + ActionContextProbe.g(b, "ragdollFall") + " female=" + b.isFemale()
+            + " wasZombie=" + ActionContextProbe.g(b, "wasZombie") + " fakeDead=" + b.isFakeDead() + " skeleton=" + b.isSkeleton()
+            + " rotStage=" + ActionContextProbe.g(b, "zombieRotStageAtDeath")
+            + " items=" + b.getContainer().getItems().size() + " worn=" + b.getWornItems().size() + " attached=" + b.getAttachedItems().size()
+            + " collidable=" + ActionContextProbe.g(b, "collidable") + " solid=" + ActionContextProbe.g(b, "solid");
     }
 
     // `zsq`: the collide, path and vision matrices the harness's chunk loading left on every square of the four loaded chunks

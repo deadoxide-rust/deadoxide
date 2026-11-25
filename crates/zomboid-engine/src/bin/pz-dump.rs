@@ -116,7 +116,9 @@ fn main() {
         Some("invbytes") if a.len() == 4 => {
             inventory_dump::inventory(Path::new(&a[2]), Path::new(&a[3]))
         }
-        Some("zombieai") | Some("zombiehit") if a.len() >= 4 => zombieai(Path::new(&a[2]), &a[3..]),
+        Some("zombieai") | Some("zombiehit") | Some("zombiekill") if a.len() >= 4 => {
+            zombieai(Path::new(&a[2]), &a[3..])
+        }
         Some("pathfind" | "pathgraph" | "pathsearch") if a.len() >= 4 => {
             path_dump::pathfind(Path::new(&a[2]), &a[3..])
         }
@@ -11034,6 +11036,10 @@ fn zombie_ai_scenario(
         sprites: sprites.clone(),
         zombie_object_id: 1,
         game_sounds: scripts.map(|m| std::rc::Rc::new(m.game_sounds.clone())),
+        blood_level: sandbox
+            .get_int("BloodLevel")
+            .ok_or("zombieai: the sandbox has no BloodLevel")?,
+        corpses: Vec::new(),
     };
     let mut outfit_rng = OutfitRng::default();
     outfit_rng.set_seed(seed);
@@ -11068,6 +11074,7 @@ fn zombie_ai_scenario(
     // `z.setCurrent(cell.getGridSquare(8280, 11670, 0))`
     z.sp.current = Some((8280, 11670, 0));
     let mut prev = world.rand.id();
+    let mut corpses_printed = 0;
     for n in 1..=ticks {
         if force {
             z.sp.target = true;
@@ -11146,9 +11153,49 @@ fn zombie_ai_scenario(
             vars.trim_end()
         );
         prev = draws;
+        // after the tick's line: `CORPSE T <tick> ...`, each corpse `IsoDeadBody(died)` made, once (as `ZombieAiProbe.java`)
+        if let Some(sp) = world.sp.as_ref() {
+            while corpses_printed < sp.corpses.len() {
+                let _ = writeln!(sb, "{}", corpse_line(n, &sp.corpses[corpses_printed]));
+                corpses_printed += 1;
+            }
+        }
     }
     let _ = writeln!(sb, "END {spec} draws={}", world.rand.id());
     Ok(())
+}
+
+/// The `CORPSE` line of `tests/original_probe/ZombieAiProbe.java` for a corpse `IsoDeadBody(died)` made.
+fn corpse_line(
+    tick: usize,
+    c: &zomboid_engine::zombie::characters::iso_zombie_kill::Corpse,
+) -> String {
+    use zomboid_engine::java::float_to_string as fl;
+    let b = &c.body;
+    let sq = c
+        .square
+        .map_or("null".to_string(), |(x, y, z)| format!("{x},{y},{z}"));
+    format!(
+        "CORPSE T {tick} x={} y={} z={} sq={sq} angle={} fwd={},{} fallOnFront={} killedByFall={} crawling={} ragdollFall={} female={} wasZombie={} fakeDead={} skeleton={} rotStage={} items={} worn={} attached={} collidable=false solid=false",
+        fl(b.moving.x),
+        fl(b.moving.y),
+        fl(b.moving.z),
+        fl(b.angle),
+        fl(c.forward.x),
+        fl(c.forward.y),
+        b.fall_on_front,
+        b.killed_by_fall,
+        b.crawling,
+        b.ragdoll_fall,
+        b.female,
+        b.was_zombie,
+        b.fake_dead,
+        b.was_skeleton,
+        b.zombie_rot_stage_at_death,
+        b.container.as_ref().map_or(0, |c| c.items.len()),
+        b.worn_items.len(),
+        b.attached_items.len(),
+    )
 }
 
 /// Every animation set of `media/AnimSets` and every action group of `media/actiongroups`, in the format of

@@ -65,9 +65,8 @@ impl IsoZombie {
     pub(crate) fn on_ground_enter(&mut self, world: &mut ZombieWorld) -> Result<(), String> {
         // setCollidable(false): `IsoZombie.updateInternal` sets it back to true before anything reads it
         if self.is_dead() {
-            return Err(
-                "ZombieOnGroundState.enter: a dead zombie (die(), the corpse) is not ported".into(),
-            );
+            // `!isDead()` guards `setOnFloor(true)` and the whole branch: `die()` (the corpse)
+            return self.die(world);
         }
         self.on_floor = true;
         // `!isDead() && !isFakeDead()`
@@ -91,7 +90,8 @@ impl IsoZombie {
         rd: &SpRead,
     ) -> Result<(), String> {
         if self.is_dead() {
-            return Err("ZombieOnGroundState.execute: a dead zombie (die()) is not ported".into());
+            // `!isRagdollSimulationActive()` (no ragdoll is simulated): `die()`
+            return self.die(world);
         }
         if self.sp.become_crawler {
             // isBeingSteppedOn / isUnderVehicle, then setCrawler(true), setCanWalk(false), setReanimate(true)

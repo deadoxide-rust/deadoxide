@@ -11,6 +11,7 @@ pub mod iso_player;
 pub mod iso_zombie;
 pub mod iso_zombie_fall;
 pub mod iso_zombie_hit;
+pub mod iso_zombie_kill;
 pub mod iso_zombie_move;
 pub mod iso_zombie_sp;
 pub mod iso_zombie_states;
